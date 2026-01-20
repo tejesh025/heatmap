@@ -1,0 +1,36 @@
+name: Fetch LeetCode Calendar
+
+on:
+  schedule:
+    - cron: "10 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch LeetCode data
+        run: |
+          curl -s https://leetcode.com/graphql \
+            -H "Content-Type: application/json" \
+            --data '{
+              "query": "query ($username: String!) { matchedUser(username: $username) { submissionCalendar } }",
+              "variables": { "username": "tejesh25" }
+            }' > raw.json
+
+          node -e "
+            const fs = require('fs');
+            const raw = JSON.parse(fs.readFileSync('raw.json'));
+            const cal = JSON.parse(raw.data.matchedUser.submissionCalendar);
+            fs.writeFileSync('submissionCalendar.json', JSON.stringify(cal));
+          "
+
+      - name: Commit data
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add submissionCalendar.json
+          git commit -m 'Update LeetCode calendar' || echo 'No changes'
+          git push
