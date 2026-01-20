@@ -1,16 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>LeetCode Heatmap Wallpaper</title>
 <style>
-  body {
-    margin: 0;
-    background: black;
-  }
-  canvas {
-    display: none;
-  }
+  body { margin:0; background:black; }
+  canvas { display:none; }
 </style>
 </head>
 <body>
@@ -18,97 +13,74 @@
 <canvas id="c"></canvas>
 
 <script>
-/* ===== SCREEN ===== */
+/* ===== SCREEN (Realme 9 SE) ===== */
 const W = 1080, H = 2400;
+const CELL = 70, GAP = 20;
+const START_Y = 850;
+const START_X = (W - (7*CELL + 6*GAP)) / 2;
 
-/* ===== GRID ===== */
-const RADIUS = 28;
-const GAP = 22;
-const COLS = 7;
-const ROWS = 6;
-
-const GRID_W = COLS * (RADIUS * 2) + (COLS - 1) * GAP;
-const START_X = (W - GRID_W) / 2;
-const START_Y = 900;
-
-/* ===== COLORS ===== */
+/* ===== COLORS (DESIGN ONLY) ===== */
 const BG = "#000000";
 const SOLVED = "#FFFFFF";
 const MISSED = "#E53935";
-const FUTURE = "#2E2E2E";
-const TITLE = "#9E9E9E";
+const FUTURE = "#2E2E2E"; // softer grey
 
-/* ===== TIME (UTC) ===== */
+/* ===== UTC TIME ===== */
 const now = new Date();
 const Y = now.getUTCFullYear();
 const M = now.getUTCMonth();
 const TODAY = now.getUTCDate();
 
-const daysInMonth = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate();
+const daysInMonth = new Date(Date.UTC(Y, M+1, 0)).getUTCDate();
 let firstDay = new Date(Date.UTC(Y, M, 1)).getUTCDay();
 firstDay = (firstDay + 6) % 7;
 
 /* ===== CANVAS ===== */
 const canvas = document.getElementById("c");
-console.log("canvas =", canvas); // must NOT be null
-
 canvas.width = W;
 canvas.height = H;
 const ctx = canvas.getContext("2d");
 
-/* ===== DRAW ===== */
-function drawCircle(x, y, r, color) {
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-}
-
-/* ===== LOAD DATA ===== */
+/* ===== LOAD DATA (UNCHANGED) ===== */
 fetch("./submissionCalendar.json")
-  .then(r => r.json())
+  .then(res => res.json())
   .then(calendar => {
 
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = TITLE;
-    ctx.font = "32px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("Leet code - Heat Map", W / 2, START_Y - 80);
-
     let day = 1;
-    let solved = 0;
-
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const idx = r * COLS + c;
+    for (let r = 0; r < 6; r++) {
+      for (let c = 0; c < 7; c++) {
+        const idx = r * 7 + c;
         if (idx < firstDay || day > daysInMonth) continue;
 
-        const x = START_X + c * (RADIUS * 2 + GAP) + RADIUS;
-        const y = START_Y + r * (RADIUS * 2 + GAP) + RADIUS;
-
+        const x = START_X + c * (CELL + GAP);
+        const y = START_Y + r * (CELL + GAP);
         const epoch = Math.floor(Date.UTC(Y, M, day) / 1000);
 
-        let color =
+        ctx.fillStyle =
           day > TODAY ? FUTURE :
           calendar[epoch] ? SOLVED :
           MISSED;
 
-        if (calendar[epoch]) solved++;
+        /* ===== DESIGN CHANGE ONLY ===== */
+        ctx.beginPath();
+        ctx.arc(
+          x + CELL/2,
+          y + CELL/2,
+          CELL/2,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
 
-        drawCircle(x, y, RADIUS, color);
         day++;
       }
     }
 
-    const focus = ((solved / TODAY) * 100).toFixed(1);
-    ctx.fillStyle = MISSED;
-    ctx.font = "28px Arial";
-    ctx.fillText(`FOCUS ${focus}%`, W / 2, START_Y + 420);
-
     const a = document.createElement("a");
-    a.download = "leetcode_wallpaper.png";
+    a.download = "output.png";
     a.href = canvas.toDataURL("image/png");
     a.click();
   });
