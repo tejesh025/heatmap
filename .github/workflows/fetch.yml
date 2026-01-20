@@ -2,18 +2,25 @@ name: Fetch LeetCode Calendar and Generate PNG
 
 on:
   schedule:
-    - cron: "10 0 * * *"    # Daily at 00:10 UTC
-  workflow_dispatch:       # Also runnable manually
+    - cron: "10 0 * * *"   # Daily at 00:10 UTC
+  workflow_dispatch:
 
 jobs:
   fetch-and-generate:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
-      - uses: actions/checkout@v4
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 2️⃣ Fetch LeetCode calendar JSON
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # 3️⃣ Fetch LeetCode submission calendar
       - name: Fetch LeetCode data
         run: |
           curl -s https://leetcode.com/graphql \
@@ -25,30 +32,24 @@ jobs:
 
           node -e "
             const fs = require('fs');
-            const raw = JSON.parse(fs.readFileSync('raw.json'));
+            const raw = JSON.parse(fs.readFileSync('raw.json', 'utf8'));
             const cal = JSON.parse(raw.data.matchedUser.submissionCalendar);
             fs.writeFileSync('submissionCalendar.json', JSON.stringify(cal));
           "
 
-      # 3️⃣ Setup Node.js so we can generate image
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      # 4️⃣ Install Canvas (for drawing PNG)
+      # 4️⃣ Install dependencies for PNG generation
       - name: Install canvas
         run: npm install canvas
 
-      # 5️⃣ Generate PNG from the JSON
-      - name: Generate PNG
+      # 5️⃣ Generate PNG (uses generate_image.js)
+      - name: Generate heatmap image
         run: node generate_image.js
 
-      # 6️⃣ Commit updated JSON and PNG
-      - name: Commit files
+      # 6️⃣ Commit and push updated files
+      - name: Commit and push
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
           git add submissionCalendar.json leetcode_heatmap.png
-          git commit -m 'Update calendar JSON + heatmap PNG' || echo 'No changes'
+          git commit -m "Update LeetCode calendar and heatmap" || echo "No changes to commit"
           git push
