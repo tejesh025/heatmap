@@ -36,7 +36,8 @@ let firstDay = new Date(Date.UTC(Y, M, 1)).getUTCDay();
 firstDay = (firstDay + 6) % 7;
 
 /* ===== CANVAS ===== */
-const canvas = document.getElementById("c");
+const canvas = document.querySelector("canvas");
+
 canvas.width = W;
 canvas.height = H;
 const ctx = canvas.getContext("2d");
