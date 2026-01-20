@@ -1,18 +1,9 @@
-const { createCanvas, registerFont } = require("canvas");
+const { createCanvas } = require("canvas");
 const fs = require("fs");
-
-/* ===== OPTIONAL FONT (safe to comment if not present) ===== */
-// If you DO have Inter-Regular.ttf in repo root, keep this line.
-// If not, comment it out.
-// registerFont("./Inter-Regular.ttf", { family: "Inter" });
 
 /* ===== 1. SCREEN & COORDINATES ===== */
 const W = 1080;
 const H = 2400;
-
-// Header
-const HEADER_X = 319;
-const HEADER_Y = 1102;
 
 // Footer
 const FOOTER_X = 427;
@@ -30,10 +21,10 @@ const RADIUS = DIAMETER / 2;
 const GAP = (BLOCK_W - (COLS * DIAMETER)) / (COLS - 1);
 
 /* ===== 3. COLORS ===== */
-const BG_COLOR = "#141414";
-const C_SOLVED = "#c5baba";
-const C_FUTURE = "#323030";
-const C_MISSED = "#FF0000";
+const BG_COLOR = "#0f0f0f";      // darker background
+const C_SOLVED = "#ffffff";     // solved = white
+const C_FUTURE = "#2a2a2a";
+const C_MISSED = "#ff0000";
 const C_FOCUS_TEXT = "#9a3030";
 const C_OTHER_TEXT = "#6a6060";
 
@@ -57,17 +48,10 @@ const ctx = canvas.getContext("2d");
 ctx.fillStyle = BG_COLOR;
 ctx.fillRect(0, 0, W, H);
 
-/* ===== 8. HEADER TEXT ===== */
-ctx.font = "40px Inter";
-ctx.fillStyle = C_OTHER_TEXT;
-ctx.textBaseline = "top";
-ctx.textAlign = "left";
-ctx.fillText("Leet code - Heat Map", HEADER_X, HEADER_Y);
-
-/* ===== 9. GRID ===== */
+/* ===== 8. GRID ===== */
 let solvedCount = 0;
 
-ctx.shadowColor = "rgba(0,0,0,0.4)";
+ctx.shadowColor = "rgba(0,0,0,0.5)";
 ctx.shadowBlur = 4;
 ctx.shadowOffsetY = 4;
 
@@ -98,9 +82,9 @@ for (let d = 1; d <= daysInMonth; d++) {
   ctx.fill();
 }
 
-/* ===== 10. FOOTER ===== */
+/* ===== 9. FOOTER ===== */
 ctx.shadowColor = "transparent";
-ctx.font = "36px Inter";
+ctx.font = "36px sans-serif";
 
 const percentage =
   TODAY > 0 ? ((solvedCount / TODAY) * 100).toFixed(1) : "0.0";
@@ -112,7 +96,7 @@ const focusWidth = ctx.measureText("FOCUS ").width;
 ctx.fillStyle = C_OTHER_TEXT;
 ctx.fillText(`${percentage}%`, FOOTER_X + focusWidth, FOOTER_Y);
 
-/* ===== 11. SAVE PNG ===== */
+/* ===== 10. SAVE PNG ===== */
 fs.writeFileSync(
   "leetcode_heatmap.png",
   canvas.toBuffer("image/png")
