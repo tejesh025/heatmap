@@ -2,9 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>LeetCode Heatmap Wallpaper</title>
+<title>LeetCode Wallpaper - Custom Colors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-  body { margin:0; background:black; }
+  /* 1. Exact Background Color */
+  body { margin:0; background:#141414; }
   canvas { display:none; }
 </style>
 </head>
@@ -13,78 +18,137 @@
 <canvas id="c"></canvas>
 
 <script>
-/* ===== SCREEN (Realme 9 SE) ===== */
+/* ===== 1. SCREEN & COORDINATES ===== */
 const W = 1080, H = 2400;
-const CELL = 70, GAP = 20;
-const START_Y = 850;
-const START_X = (W - (7*CELL + 6*GAP)) / 2;
 
-/* ===== COLORS (DESIGN ONLY) ===== */
-const BG = "#000000";
-const SOLVED = "#FFFFFF";
-const MISSED = "#E53935";
-const FUTURE = "#2E2E2E"; // softer grey
+// Text Coordinates
+const HEADER_X = 319;
+const HEADER_Y = 1102;
 
-/* ===== UTC TIME ===== */
+// Footer Position (Y=1560 to preserve gap below dots)
+const FOOTER_X = 427;
+const FOOTER_Y = 1560;
+
+// Grid Block Coordinates
+const BLOCK_X = 175;
+const BLOCK_Y = 1200;
+const BLOCK_W = 729.45;
+
+/* ===== 2. GRID SETTINGS (9 Columns) ===== */
+const COLS = 9;
+
+// Calculate Size
+const DIAMETER = 65; 
+const RADIUS   = DIAMETER / 2;
+const GAP      = (BLOCK_W - (COLS * DIAMETER)) / (COLS - 1); 
+
+/* ===== 3. CUSTOM COLORS ===== */
+const BG_COLOR      = "#141414"; // Background
+const C_SOLVED      = "#c5baba"; // Solved Dots
+const C_FUTURE      = "#323030"; // Future Dots
+const C_FOCUS_TEXT  = "#9a3030"; // "FOCUS" Text
+const C_OTHER_TEXT  = "#6a6060"; // "Leet code..." & Percentage Text
+
+// Note: You didn't specify a new color for "Missed" (Unsolved Past) dots.
+// I kept it as Red (#FF0000) based on your previous requests. 
+// If you want it to match the text, change this to "#9a3030".
+const C_MISSED      = "#FF0000"; 
+
+/* ===== 4. DATA SETUP ===== */
 const now = new Date();
 const Y = now.getUTCFullYear();
 const M = now.getUTCMonth();
 const TODAY = now.getUTCDate();
-
 const daysInMonth = new Date(Date.UTC(Y, M+1, 0)).getUTCDate();
-let firstDay = new Date(Date.UTC(Y, M, 1)).getUTCDay();
-firstDay = (firstDay + 6) % 7;
 
-/* ===== CANVAS ===== */
+/* ===== CANVAS SETUP ===== */
 const canvas = document.querySelector("canvas");
-
 canvas.width = W;
 canvas.height = H;
 const ctx = canvas.getContext("2d");
 
-/* ===== LOAD DATA (UNCHANGED) ===== */
-fetch("./submissionCalendar.json")
-  .then(res => res.json())
-  .then(calendar => {
+/* ===== WAIT FOR FONTS ===== */
+document.fonts.ready.then(() => {
+  fetch("./submissionCalendar.json")
+    .then(res => res.json())
+    .then(calendar => {
 
-    ctx.fillStyle = BG;
-    ctx.fillRect(0, 0, W, H);
+      // A. Fill Background
+      ctx.fillStyle = BG_COLOR;
+      ctx.fillRect(0, 0, W, H);
 
-    let day = 1;
-    for (let r = 0; r < 6; r++) {
-      for (let c = 0; c < 7; c++) {
-        const idx = r * 7 + c;
-        if (idx < firstDay || day > daysInMonth) continue;
+      // B. Draw Header Text
+      ctx.font = "40px 'Inter', sans-serif";
+      ctx.fillStyle = C_OTHER_TEXT;
+      ctx.textBaseline = "top"; 
+      ctx.textAlign = "left";
+      ctx.fillText("Leet code - Heat Map", HEADER_X, HEADER_Y);
 
-        const x = START_X + c * (CELL + GAP);
-        const y = START_Y + r * (CELL + GAP);
-        const epoch = Math.floor(Date.UTC(Y, M, day) / 1000);
+      // C. Draw Grid (9 Cols)
+      let solvedCount = 0;
+      let daysPassed = TODAY;
 
-        ctx.fillStyle =
-          day > TODAY ? FUTURE :
-          calendar[epoch] ? SOLVED :
-          MISSED;
+      // Shadow
+      ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetY = 4;
 
-        /* ===== DESIGN CHANGE ONLY ===== */
-        ctx.beginPath();
-        ctx.arc(
-          x + CELL/2,
-          y + CELL/2,
-          CELL/2,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
+      for (let d = 1; d <= daysInMonth; d++) {
+         const idx = d - 1; 
+         const row = Math.floor(idx / COLS);
+         const col = idx % COLS;
 
-        day++;
+         // Calculate Position
+         const cx = BLOCK_X + col * (DIAMETER + GAP) + RADIUS;
+         const cy = BLOCK_Y + row * (DIAMETER + GAP) + RADIUS;
+
+         const epoch = Math.floor(Date.UTC(Y, M, d) / 1000);
+         
+         let color = C_FUTURE;
+
+         if (d <= TODAY) {
+             if (calendar[epoch]) {
+                 color = C_SOLVED;
+                 solvedCount++;
+             } else {
+                 color = (d === TODAY) ? C_FUTURE : C_MISSED;
+             }
+         }
+
+         // Draw Circle
+         ctx.beginPath();
+         ctx.arc(cx, cy, RADIUS, 0, Math.PI * 2);
+         ctx.fillStyle = color;
+         ctx.fill();
       }
-    }
 
-    const a = document.createElement("a");
-    a.download = "output.png";
-    a.href = canvas.toDataURL("image/png");
-    a.click();
-  });
+      // D. Draw Footer Text
+      ctx.shadowColor = "transparent"; 
+      ctx.font = "36px 'Inter', sans-serif";
+      ctx.textBaseline = "top";
+
+      // Calculate Percentage
+      let percentage = daysPassed > 0 ? ((solvedCount / daysPassed) * 100).toFixed(1) : "0.0";
+      
+      const textFocus = "FOCUS ";
+      const textPercent = percentage + "%";
+
+      // Draw "FOCUS"
+      ctx.fillStyle = C_FOCUS_TEXT;
+      ctx.fillText(textFocus, FOOTER_X, FOOTER_Y);
+
+      // Draw Percentage
+      const focusWidth = ctx.measureText(textFocus).width;
+      ctx.fillStyle = C_OTHER_TEXT;
+      ctx.fillText(textPercent, FOOTER_X + focusWidth, FOOTER_Y);
+
+      // E. Download
+      const a = document.createElement("a");
+      a.download = "leetcode_heatmap_custom.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    });
+});
 </script>
 
 </body>
