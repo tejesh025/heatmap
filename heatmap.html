@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LeetCode Heatmap Wallpaper</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+  }
+  canvas { display: none; }
+</style>
+</head>
+<body>
+
+<canvas id="wallpaper"></canvas>
+
+<script>
+const USERNAME = "tejesh25";
+
+/* Realme 9 SE */
+const W = 1080, H = 2400;
+const CELL = 70, GAP = 20;
+const START_X = (W - (7 * CELL + 6 * GAP)) / 2;
+const START_Y = 850;
+
+const BG = "#000";
+const SOLVED = "#fff";
+const MISSED = "#e53935";
+const FUTURE = "#3a3a3a";
+
+/* UTC time (LeetCode uses UTC) */
+const now = new Date();
+const Y = now.getUTCFullYear();
+const M = now.getUTCMonth();
+const TODAY = now.getUTCDate();
+
+const daysInMonth = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate();
+
+let firstDay = new Date(Date.UTC(Y, M, 1)).getUTCDay();
+firstDay = (firstDay + 6) % 7; // Monday = 0
+
+const canvas = document.getElementById("wallpaper");
+canvas.width = W;
+canvas.height = H;
+const ctx = canvas.getContext("2d");
+
+async function fetchCalendar() {
+  const res = await fetch("https://leetcode.com/graphql", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `
+        query ($username: String!) {
+          matchedUser(username: $username) {
+            submissionCalendar
+          }
+        }
+      `,
+      variables: { username: USERNAME }
+    })
+  });
+
+  const json = await res.json();
+  return JSON.parse(json.data.matchedUser.submissionCalendar);
+}
+
+async function render() {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  const calendar = await fetchCalendar();
+
+  let day = 1;
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 7; c++) {
+      const idx = r * 7 + c;
+      if (idx < firstDay || day > daysInMonth) continue;
+
+      const x = START_X + c * (CELL + GAP);
+      const y = START_Y + r * (CELL + GAP);
+
+      const epoch = Math.floor(Date.UTC(Y, M, day) / 1000);
+
+      let color;
+      if (day > TODAY) color = FUTURE;
+      else if (calendar[epoch] > 0) color = SOLVED;
+      else color = MISSED;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, CELL, CELL);
+
+      day++;
+    }
+  }
+
+  const a = document.createElement("a");
+  a.download = "output.png";
+  a.href = canvas.toDataURL("image/png");
+  a.click();
+}
+
+render();
+</script>
+</body>
+</html>
