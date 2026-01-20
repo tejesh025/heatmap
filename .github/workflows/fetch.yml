@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo
+      # 1️⃣ Checkout repo
       - uses: actions/checkout@v4
 
-      # Step 2: Fetch LeetCode calendar JSON
+      # 2️⃣ Fetch LeetCode calendar JSON
       - name: Fetch LeetCode data
         run: |
           curl -s https://leetcode.com/graphql \
@@ -30,21 +30,21 @@ jobs:
             fs.writeFileSync('submissionCalendar.json', JSON.stringify(cal));
           "
 
-      # Step 3: Setup Node.js
+      # 3️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Step 4: Install canvas
+      # 4️⃣ Install canvas
       - name: Install Node Canvas
         run: npm install canvas
 
-      # Step 5: Generate heatmap PNG
+      # 5️⃣ Generate PNG
       - name: Generate PNG
         run: node generate_image.js
 
-      # Step 6: Commit JSON and PNG
+      # 6️⃣ Commit JSON and PNG
       - name: Commit updated files
         run: |
           git config user.name github-actions
