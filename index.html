@@ -18,8 +18,6 @@
 <canvas id="c"></canvas>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-
 /* ===== SCREEN ===== */
 const W = 1080, H = 2400;
 
@@ -48,15 +46,17 @@ const TODAY = now.getUTCDate();
 
 const daysInMonth = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate();
 let firstDay = new Date(Date.UTC(Y, M, 1)).getUTCDay();
-firstDay = (firstDay + 6) % 7; // Monday = 0
+firstDay = (firstDay + 6) % 7;
 
 /* ===== CANVAS ===== */
 const canvas = document.getElementById("c");
+console.log("canvas =", canvas); // must NOT be null
+
 canvas.width = W;
 canvas.height = H;
 const ctx = canvas.getContext("2d");
 
-/* ===== DRAW CIRCLE ===== */
+/* ===== DRAW ===== */
 function drawCircle(x, y, r, color) {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -72,7 +72,6 @@ fetch("./submissionCalendar.json")
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
 
-    /* Title */
     ctx.fillStyle = TITLE;
     ctx.font = "32px Arial";
     ctx.textAlign = "center";
@@ -91,36 +90,28 @@ fetch("./submissionCalendar.json")
 
         const epoch = Math.floor(Date.UTC(Y, M, day) / 1000);
 
-        let color;
-        if (day > TODAY) {
-          color = FUTURE;
-        } else if (calendar[epoch]) {
-          color = SOLVED;
-          solved++;
-        } else {
-          color = MISSED;
-        }
+        let color =
+          day > TODAY ? FUTURE :
+          calendar[epoch] ? SOLVED :
+          MISSED;
+
+        if (calendar[epoch]) solved++;
 
         drawCircle(x, y, RADIUS, color);
         day++;
       }
     }
 
-    /* Focus */
     const focus = ((solved / TODAY) * 100).toFixed(1);
     ctx.fillStyle = MISSED;
     ctx.font = "28px Arial";
     ctx.fillText(`FOCUS ${focus}%`, W / 2, START_Y + 420);
 
-    /* Export */
     const a = document.createElement("a");
     a.download = "leetcode_wallpaper.png";
     a.href = canvas.toDataURL("image/png");
     a.click();
-  })
-  .catch(err => console.error(err));
-
-});
+  });
 </script>
 
 </body>
