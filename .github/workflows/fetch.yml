@@ -2,15 +2,15 @@ name: Fetch LeetCode Calendar and Generate PNG
 
 on:
   schedule:
-    - cron: "10 0 * * *"  # Runs daily at 00:10 UTC (~5:10 AM IST)
-  workflow_dispatch:      # Allows manual run
+    - cron: "10 0 * * *"    # Daily at 00:10 UTC
+  workflow_dispatch:       # Also runnable manually
 
 jobs:
   fetch-and-generate:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout repository
       - uses: actions/checkout@v4
 
       # 2️⃣ Fetch LeetCode calendar JSON
@@ -30,25 +30,25 @@ jobs:
             fs.writeFileSync('submissionCalendar.json', JSON.stringify(cal));
           "
 
-      # 3️⃣ Setup Node.js
-      - name: Setup Node.js
+      # 3️⃣ Setup Node.js so we can generate image
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 4️⃣ Install canvas
-      - name: Install Node Canvas
+      # 4️⃣ Install Canvas (for drawing PNG)
+      - name: Install canvas
         run: npm install canvas
 
-      # 5️⃣ Generate PNG
+      # 5️⃣ Generate PNG from the JSON
       - name: Generate PNG
         run: node generate_image.js
 
-      # 6️⃣ Commit JSON and PNG
-      - name: Commit updated files
+      # 6️⃣ Commit updated JSON and PNG
+      - name: Commit files
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add submissionCalendar.json leetcode_heatmap.png
-          git commit -m 'Update LeetCode calendar and PNG' || echo 'No changes'
+          git commit -m 'Update calendar JSON + heatmap PNG' || echo 'No changes'
           git push
